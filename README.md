@@ -1,6 +1,6 @@
 # Home Assistant Integration for Calaos
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tiramiseb&repository=calaos-ha)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=tiramiseb&repository=calaos-ha&category=integration)
 
 [Calaos](https://www.calaos.fr/) is a home automation platform, initially
 created with support of Wago 750 series PLCs.
