@@ -1,0 +1,26 @@
+{
+	"title": "Calaos",
+	"config":{
+		"step": {
+			"user": {
+				"title": "Connexion à Calaos",
+				"description": "Configurer la connexion au serveur Calaos",
+				"data": {
+					"username": "Nom d'utilisateur",
+					"password": "Mot de passe",
+					"url": "URL du serveur"
+				}
+			}
+		}
+	},
+	"device_automation": {
+		"trigger_type": {
+			"click": "Clic",
+			"single_click": "Clic simple",
+			"double_click": "Clic double",
+			"triple_click": "Clic triple",
+			"short_click": "Clic court",
+			"long_click": "Clic long"
+		}
+	}
+}
