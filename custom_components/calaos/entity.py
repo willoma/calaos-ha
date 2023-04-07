@@ -9,12 +9,12 @@ from .const import DOMAIN
 class CalaosEntity:
     _attr_should_poll = False
     _attr_has_entity_name = True
-    _attr_name = None
 
     def __init__(self, hass: HomeAssistant, entry_id: str, item: Item) -> None:
         self.entry_id = entry_id
         self.item = item
         self.hass = hass
+        self._attr_name = self.item.name
         self._attr_unique_id = f"{DOMAIN}_{self.item.id}"
         self.entity_id = f"{self.platform}.{self.unique_id}"
         self.schedule_update_ha_state()
