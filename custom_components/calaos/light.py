@@ -1,4 +1,5 @@
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
+from homeassistant.const import Platform
 
 from .const import DOMAIN
 from .entity import CalaosEntity
@@ -20,6 +21,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class Light(CalaosEntity, LightEntity):
+    platform = Platform.LIGHT
     _attr_color_mode = ColorMode.ONOFF
     _attr_supported_color_modes = [ColorMode.ONOFF]
 
@@ -35,6 +37,7 @@ class Light(CalaosEntity, LightEntity):
 
 
 class LightDimmer(CalaosEntity, LightEntity):
+    platform = Platform.LIGHT
     _attr_color_mode = ColorMode.BRIGHTNESS
     _attr_supported_color_modes = [ColorMode.BRIGHTNESS]
 

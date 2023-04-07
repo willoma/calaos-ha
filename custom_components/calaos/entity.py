@@ -6,6 +6,7 @@ from .const import DOMAIN
 class CalaosEntity:
     _attr_should_poll = False
     _attr_has_entity_name = True
+    _attr_name = None
 
     def __init__(self, hass, entry_id, item):
         self.entry_id = entry_id

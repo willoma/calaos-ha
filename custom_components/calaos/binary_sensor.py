@@ -1,4 +1,5 @@
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass, BinarySensorEntity
+from homeassistant.const import Platform
 
 from .const import DOMAIN
 from .entity import CalaosEntity
@@ -20,6 +21,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 class Scenario(CalaosEntity, BinarySensorEntity):
+    platform = Platform.BINARY_SENSOR
     _attr_icon = "mdi:motion-play-outline"
     _attr_device_class = BinarySensorDeviceClass.RUNNING
 
@@ -29,6 +31,7 @@ class Scenario(CalaosEntity, BinarySensorEntity):
 
 
 class TimeRange(CalaosEntity, BinarySensorEntity):
+    platform = Platform.BINARY_SENSOR
     _attr_device_class = BinarySensorDeviceClass.RUNNING
 
     @property
