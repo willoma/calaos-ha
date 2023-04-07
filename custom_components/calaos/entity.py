@@ -1,5 +1,7 @@
 from homeassistant.helpers.entity import DeviceInfo
 
+from pycalaos.item import Item
+
 from .const import DOMAIN
 
 
@@ -8,7 +10,7 @@ class CalaosEntity:
     _attr_has_entity_name = True
     _attr_name = None
 
-    def __init__(self, hass, entry_id, item):
+    def __init__(self, hass: HomeAssistant, entry_id: str, item: Item) -> None:
         self.entry_id = entry_id
         self.item = item
         self.hass = hass
@@ -17,7 +19,7 @@ class CalaosEntity:
         self.schedule_update_ha_state()
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         return DeviceInfo(
             config_entry_id=self.entry_id,
             identifiers={(DOMAIN, self.entry_id, self.item.id)},

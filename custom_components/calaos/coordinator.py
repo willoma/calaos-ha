@@ -3,19 +3,22 @@ import logging
 from http.client import RemoteDisconnected
 from urllib.error import URLError
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_ID, CONF_TYPE
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry
 
 from pycalaos import Client, ClickType, NbClicks
+from pycalaos.item import Item
 
 from .const import DOMAIN, EVENT_DOMAIN, POLL_INTERVAL
+from .entity import CalaosEntity
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class CalaosCoordinator:
-    def __init__(self, hass, config_entry):
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
         self.hass = hass
         self.client = None
         self.entry_id = config_entry.entry_id
@@ -27,7 +30,8 @@ class CalaosCoordinator:
         self.item_type_by_device_id = {}
         self._running = False
 
-    async def connect(self):
+    async def connect(self) -> None:
+        _LOGGER.debug("Connecting to %s", self.calaos_url)
         self._running = True
         self.client = await self.hass.async_add_executor_job(
             Client,
@@ -37,12 +41,12 @@ class CalaosCoordinator:
         )
 
     @callback
-    def stop(self, *args):
+    def stop(self, *args) -> None:
         _LOGGER.debug("Disconnecting and stopping the pushing poller")
         self._running = False
         self.client = None
 
-    def declare_noentity_devices(self):
+    async def declare_noentity_devices(self) -> None:
         dev_registry = device_registry.async_get(self.hass)
         dev_registry.async_get_or_create(
             config_entry_id=self.entry_id,
@@ -52,17 +56,18 @@ class CalaosCoordinator:
             model="Calaos v3",
         )
         for item in self.client.items_by_gui_type("switch"):
-            self.declare_device(dev_registry, self.entry_id, item)
+            await self.declare_device(dev_registry, self.entry_id, item)
         for item in self.client.items_by_gui_type("switch3"):
-            self.declare_device(dev_registry, self.entry_id, item)
+            await self.declare_device(dev_registry, self.entry_id, item)
         for item in self.client.items_by_gui_type("switch_long"):
-            self.declare_device(dev_registry, self.entry_id, item)
+            await self.declare_device(dev_registry, self.entry_id, item)
 
-    def register(self, item_id, entity):
+    @callback
+    def register(self, item_id: str, entity: CalaosEntity) -> None:
         self._entity_by_id[item_id] = entity
 
-    async def pushing_poll(self):
-        _LOGGER.debug("Starting the pushing poller")
+    async def pushing_poll(self) -> None:
+        _LOGGER.debug("Starting the pushing poller for %s", self.calaos_url)
         while self._running:
             asyncio.sleep(POLL_INTERVAL)
             try:
@@ -105,7 +110,7 @@ class CalaosCoordinator:
                                 }
                             )
 
-    def declare_device(self, registry, entry_id, item):
+    async def declare_device(self, registry: device_registry.DeviceRegistry, entry_id: str, item: Item) -> None:
         device = registry.async_get_or_create(
             config_entry_id=entry_id,
             identifiers={(DOMAIN, entry_id, item.id)},

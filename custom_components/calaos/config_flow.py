@@ -1,6 +1,7 @@
 """Config flow for the Calaos integration."""
 
 import logging
+from typing import Any
 from urllib.error import HTTPError
 
 import voluptuous as vol
@@ -11,6 +12,7 @@ from homeassistant.const import (
     CONF_URL,
     CONF_USERNAME,
 )
+from homeassistant.data_entry_flow import FlowResult
 
 from pycalaos import Client, discover
 
@@ -32,10 +34,15 @@ def conf_schema(discovered_ip):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    async def async_step_user(self, info):
+    async def async_step_user(
+        self, info: dict[str, Any] | None = None
+    ) -> FlowResult:
         if info is None:
             discovered_ip = await self.hass.async_add_executor_job(discover, 1)
-            return self.async_show_form(step_id="user", data_schema=conf_schema(discovered_ip))
+            return self.async_show_form(
+                step_id="user",
+                data_schema=conf_schema(discovered_ip)
+            )
 
         errors = {}
         try:
@@ -54,4 +61,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_create_entry(title="Calaos", data=info)
 
         discovered_ip = await self.hass.async_add_executor_job(discover, 1)
-        return self.async_show_form(step_id="user", data_schema=conf_schema(discovered_ip), errors=errors)
+        return self.async_show_form(
+            step_id="user",
+            data_schema=conf_schema(discovered_ip),
+            errors=errors
+        )

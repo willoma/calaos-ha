@@ -16,28 +16,28 @@ PLATFORMS: list[Platform] = [
 ]
 
 
-async def async_setup_entry(hass, config_entry):
-    coordinator = CalaosCoordinator(hass, config_entry)
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    coordinator = CalaosCoordinator(hass, entry)
     try:
         await coordinator.connect()
     except Exception as ex:
         raise ConfigEntryNotReady(f"Config Not Ready: {ex}")
 
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][config_entry.entry_id] = coordinator
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    coordinator.declare_noentity_devices()
+    await coordinator.declare_noentity_devices()
 
     hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
-    config_entry.async_on_unload(coordinator.stop)
+    entry.async_on_unload(coordinator.stop)
 
-    config_entry.async_create_task(
+    entry.async_create_task(
         hass,
         hass.config_entries.async_forward_entry_setups(
-            config_entry, PLATFORMS
+            entry, PLATFORMS
         )
     )
-    config_entry.async_create_background_task(
+    entry.async_create_background_task(
         hass,
         coordinator.pushing_poll(),
         "Calaos poller"
