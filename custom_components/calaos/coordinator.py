@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from http.client import RemoteDisconnected
 from urllib.error import URLError
@@ -7,6 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_ID, CONF_TYPE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry
+from homeassistant.helpers.event import async_track_time_interval
 
 from pycalaos import Client, ClickType, NbClicks
 from pycalaos.item import Item
@@ -28,11 +28,11 @@ class CalaosCoordinator:
         self._entity_by_id = {}
         self._device_id_by_id = {}
         self.item_type_by_device_id = {}
-        self._running = False
+        self.stopper = None
+        self.client = None
 
     async def connect(self) -> None:
         _LOGGER.debug("Connecting to %s", self.calaos_url)
-        self._running = True
         self.client = await self.hass.async_add_executor_job(
             Client,
             self.calaos_url,
@@ -42,8 +42,13 @@ class CalaosCoordinator:
 
     @callback
     def stop(self, *args) -> None:
-        _LOGGER.debug("Disconnecting and stopping the pushing poller")
-        self._running = False
+        _LOGGER.debug(
+            "Disconnecting and stopping the pushing poller for %s",
+            self.calaos_url
+        )
+        if self.stopper:
+            self.stopper()
+        self.stopper = None
         self.client = None
 
     async def declare_noentity_devices(self) -> None:
@@ -66,51 +71,63 @@ class CalaosCoordinator:
     def register(self, item_id: str, entity: CalaosEntity) -> None:
         self._entity_by_id[item_id] = entity
 
-    async def pushing_poll(self) -> None:
-        _LOGGER.debug("Starting the pushing poller for %s", self.calaos_url)
-        while self._running:
-            asyncio.sleep(POLL_INTERVAL)
-            try:
-                events = await self.hass.async_add_executor_job(self.client.poll)
-            except (RemoteDisconnected, URLError) as ex:
-                _LOGGER.error(f"could not poll: {ex}")
-                await self.connect()
-                continue
-            except Exception as ex:
-                _LOGGER.error(f"could not poll: {ex}")
-                continue
-            if len(events) > 0:
-                _LOGGER.debug(f"Calaos events: {events}")
-                for evt in events:
-                    event_type = None
-                    if evt.item.id in self._entity_by_id:
-                        self._entity_by_id[evt.item.id].async_schedule_update_ha_state(
+    async def poll(self, *args) -> None:
+        try:
+            events = await self.hass.async_add_executor_job(self.client.poll)
+        except (RemoteDisconnected, URLError) as ex:
+            _LOGGER.error(f"could not poll: {ex}")
+            await self.connect()
+            return
+        except Exception as ex:
+            _LOGGER.error(f"could not poll: {ex}")
+            return
+        if len(events) > 0:
+            _LOGGER.debug(f"Calaos events: {events}")
+            for evt in events:
+                if evt.item.id in self._entity_by_id:
+                    entity = self._entity_by_id[evt.item.id]
+                    entity.async_schedule_update_ha_state()
+                    continue
+                event_type = None
+                if evt.item.gui_type == "switch" and evt.state == True:
+                    event_type = "click"
+                elif evt.item.gui_type == "switch3" and evt.state != NbClicks.NONE:
+                    if evt.state == NbClicks.SINGLE:
+                        event_type = "single_click"
+                    elif evt.state == NbClicks.DOUBLE:
+                        event_type = "double_click"
+                    elif evt.state == NbClicks.TRIPLE:
+                        event_type = "triple_click"
+                elif evt.item.gui_type == "switch_long" and evt.state != ClickType.NONE:
+                    if evt.state == ClickType.SHORT:
+                        event_type = "short_click"
+                    elif evt.state == ClickType.LONG:
+                        event_type = "long_click"
+                if event_type != None:
+                    if evt.item.id in self._device_id_by_id:
+                        self.hass.bus.async_fire(
+                            EVENT_DOMAIN,
+                            {
+                                CONF_DEVICE_ID: self._device_id_by_id[evt.item.id],
+                                CONF_TYPE: event_type
+                            }
                         )
-                    elif evt.item.gui_type == "switch" and evt.state == True:
-                        event_type = "click"
-                    elif evt.item.gui_type == "switch3" and evt.state != NbClicks.NONE:
-                        if evt.state == NbClicks.SINGLE:
-                            event_type = "single_click"
-                        elif evt.state == NbClicks.DOUBLE:
-                            event_type = "double_click"
-                        elif evt.state == NbClicks.TRIPLE:
-                            event_type = "triple_click"
-                    elif evt.item.gui_type == "switch_long" and evt.state != ClickType.NONE:
-                        if evt.state == ClickType.SHORT:
-                            event_type = "short_click"
-                        elif evt.state == ClickType.LONG:
-                            event_type = "long_click"
-                    if event_type != None:
-                        if evt.item.id in self._device_id_by_id:
-                            self.hass.bus.async_fire(
-                                EVENT_DOMAIN,
-                                {
-                                    CONF_DEVICE_ID: self._device_id_by_id[evt.item.id],
-                                    CONF_TYPE: event_type
-                                }
-                            )
 
-    async def declare_device(self, registry: device_registry.DeviceRegistry, entry_id: str, item: Item) -> None:
+    async def start_poller(self) -> None:
+        _LOGGER.debug("Starting the pushing poller for %s", self.calaos_url)
+        self.stopper = async_track_time_interval(
+            self.hass,
+            self.poll,
+            POLL_INTERVAL
+        )
+
+    async def declare_device(
+        self,
+        registry: device_registry.DeviceRegistry,
+        entry_id: str,
+        item: Item
+    ) -> None:
+        _LOGGER.debug("Declaring device without entity for %s", item.name)
         device = registry.async_get_or_create(
             config_entry_id=entry_id,
             identifiers={(DOMAIN, entry_id, item.id)},

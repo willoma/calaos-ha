@@ -39,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     entry.async_create_background_task(
         hass,
-        coordinator.pushing_poll(),
+        coordinator.start_poller(),
         "Calaos poller"
     )
     return True
