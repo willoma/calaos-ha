@@ -1,3 +1,4 @@
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 
 from pycalaos.item import Item
