@@ -1,13 +1,19 @@
 """Calaos integration for Home Assistant."""
 
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .const import DOMAIN
 from .coordinator import CalaosCoordinator
 
-
-async def async_setup(hass, config):
-    return True
+PLATFORMS: list[Platform] = [
+    Platform.BINARY_SENSOR,
+    Platform.LIGHT
+]
 
 
 async def async_setup_entry(hass, config_entry):
@@ -22,10 +28,13 @@ async def async_setup_entry(hass, config_entry):
 
     coordinator.declare_noentity_devices()
 
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
+    config_entry.async_on_unload(coordinator.stop)
+
     config_entry.async_create_task(
         hass,
         hass.config_entries.async_forward_entry_setups(
-            config_entry, ["binary_sensor", "light"]
+            config_entry, PLATFORMS
         )
     )
     config_entry.async_create_background_task(
@@ -34,3 +43,9 @@ async def async_setup_entry(hass, config_entry):
         "Calaos poller"
     )
     return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        hass.data[DOMAIN].pop(entry.entry_id)
+    return unload_ok

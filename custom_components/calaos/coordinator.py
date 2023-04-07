@@ -4,6 +4,7 @@ from http.client import RemoteDisconnected
 from urllib.error import URLError
 
 from homeassistant.const import CONF_DEVICE_ID, CONF_TYPE
+from homeassistant.core import callback
 from homeassistant.helpers import device_registry
 
 from pycalaos import Client, ClickType, NbClicks
@@ -24,14 +25,22 @@ class CalaosCoordinator:
         self._entity_by_id = {}
         self._device_id_by_id = {}
         self.item_type_by_device_id = {}
+        self._running = False
 
     async def connect(self):
+        self._running = True
         self.client = await self.hass.async_add_executor_job(
             Client,
             self.calaos_url,
             self.calaos_username,
             self.calaos_password
         )
+
+    @callback
+    def stop(self, *args):
+        _LOGGER.debug("Disconnecting and stopping the pushing poller")
+        self._running = False
+        self.client = None
 
     def declare_noentity_devices(self):
         dev_registry = device_registry.async_get(self.hass)
@@ -54,7 +63,7 @@ class CalaosCoordinator:
 
     async def pushing_poll(self):
         _LOGGER.debug("Starting the pushing poller")
-        while True:
+        while self._running:
             asyncio.sleep(POLL_INTERVAL)
             try:
                 events = await self.hass.async_add_executor_job(self.client.poll)
