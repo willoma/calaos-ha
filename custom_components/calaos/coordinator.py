@@ -80,11 +80,11 @@ class CalaosCoordinator:
         try:
             events = await self.hass.async_add_executor_job(self.client.poll)
         except (RemoteDisconnected, URLError) as ex:
-            _LOGGER.error(f"could not poll: {ex}")
+            _LOGGER.error(f"connection error whole polling: {ex}")
             await self.connect()
             return
         except Exception as ex:
-            _LOGGER.error(f"could not poll: {ex}")
+            _LOGGER.error(f"unknown error while polling: {ex}")
             return
         if len(events) > 0:
             _LOGGER.debug(f"Calaos events: {events}")
