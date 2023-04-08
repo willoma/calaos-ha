@@ -27,7 +27,6 @@ class CalaosCoordinator:
         self.calaos_password = config_entry.data["password"]
         self._entity_by_id = {}
         self._device_id_by_id = {}
-        self.item_type_by_device_id = {}
         self.stopper = None
         self.client = None
 
@@ -70,6 +69,12 @@ class CalaosCoordinator:
     @callback
     def register(self, item_id: str, entity: CalaosEntity) -> None:
         self._entity_by_id[item_id] = entity
+
+    def item(self, id: str) -> Item:
+        return self.client.items[id]
+
+    def items_by_gui_type(self, gui_type: str) -> list[Item]:
+        return self.client.items_by_gui_type(gui_type)
 
     async def poll(self, *args) -> None:
         try:
@@ -138,4 +143,3 @@ class CalaosCoordinator:
             via_device=(DOMAIN, entry_id),
         )
         self._device_id_by_id[item.id] = device.id
-        self.item_type_by_device_id[device.id] = item.gui_type

@@ -19,12 +19,12 @@ async def async_setup_entry(
 ) -> None:
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
-    for item in coordinator.client.items_by_gui_type("light"):
+    for item in coordinator.items_by_gui_type("light"):
         _LOGGER.debug("Creating entity for %s", item.name)
         entity = Light(hass, config_entry.entry_id, item)
         coordinator.register(item.id, entity)
         entities.append(entity)
-    for item in coordinator.client.items_by_gui_type("light_dimmer"):
+    for item in coordinator.items_by_gui_type("light_dimmer"):
         _LOGGER.debug("Creating entity for %s", item.name)
         entity = LightDimmer(hass, config_entry.entry_id, item)
         coordinator.register(item.id, entity)

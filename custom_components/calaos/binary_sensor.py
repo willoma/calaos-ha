@@ -19,12 +19,12 @@ async def async_setup_entry(
 ) -> None:
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
-    for item in coordinator.client.items_by_gui_type("scenario"):
+    for item in coordinator.items_by_gui_type("scenario"):
         _LOGGER.debug("Creating entity for %s", item.name)
         entity = Scenario(hass, config_entry.entry_id, item)
         coordinator.register(item.id, entity)
         entities.append(entity)
-    for item in coordinator.client.items_by_gui_type("time_range"):
+    for item in coordinator.items_by_gui_type("time_range"):
         _LOGGER.debug("Creating entity for %s", item.name)
         entity = TimeRange(hass, config_entry.entry_id, item)
         coordinator.register(item.id, entity)
