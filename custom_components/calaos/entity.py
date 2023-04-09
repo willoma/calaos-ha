@@ -11,6 +11,8 @@ class CalaosEntity:
     _attr_has_entity_name = True
     _attr_name = None
 
+    _remove_prefix = ""
+
     def __init__(self, hass: HomeAssistant, entry_id: str, item: Item) -> None:
         self.entry_id = entry_id
         self.item = item
@@ -26,7 +28,7 @@ class CalaosEntity:
         return DeviceInfo(
             config_entry_id=self.entry_id,
             identifiers={(DOMAIN, self.entry_id, self.item.id)},
-            name=self.item.name,
+            name=self.item.name.removeprefix(self._remove_prefix),
             manufacturer="Calaos",
             model="Calaos v3",
             suggested_area=self.item.room.name,

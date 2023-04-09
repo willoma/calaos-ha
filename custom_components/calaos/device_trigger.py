@@ -6,12 +6,17 @@ from homeassistant.components.binary_sensor.device_trigger import (
     async_attach_trigger as binary_sensor_async_attach_trigger
 )
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
+from homeassistant.components.homeassistant.triggers import event as event_trigger
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light.device_trigger import (
     async_get_triggers as light_async_get_triggers,
     async_attach_trigger as light_async_attach_trigger
 )
-from homeassistant.components.homeassistant.triggers import event as event_trigger
+from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
+from homeassistant.components.switch.device_trigger import (
+    async_get_triggers as switch_async_get_triggers,
+    async_attach_trigger as switch_async_attach_trigger
+)
 from homeassistant.const import CONF_DEVICE_ID, CONF_DOMAIN, CONF_PLATFORM, CONF_TYPE
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.helpers import device_registry
@@ -19,6 +24,7 @@ from homeassistant.helpers.trigger import TriggerActionType, TriggerInfo
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, EVENT_DOMAIN
+from .switch import is_a_switch
 
 TRIGGER_TYPES = {
     "click",
@@ -62,7 +68,11 @@ async def item_triggers(
         return switch_long_triggers(device_id)
     if item.gui_type == "scenario" or item.gui_type == "time_range":
         return await binary_sensor_async_get_triggers(hass, device_id)
-    if item.gui_type == "light" or item.gui_type == "light_dimmer":
+    if item.gui_type == "light":
+        if is_a_switch(item):
+            return await switch_async_get_triggers(hass, device_id)
+        return await light_async_get_triggers(hass, device_id)
+    if item.gui_type == "light_dimmer":
         return await light_async_get_triggers(hass, device_id)
     return []
 
@@ -129,6 +139,8 @@ async def async_attach_trigger(
 ) -> CALLBACK_TYPE:
     if config[CONF_DOMAIN] == LIGHT_DOMAIN:
         return await light_async_attach_trigger(hass, config, action, trigger_info)
+    if config[CONF_DOMAIN] == SWITCH_DOMAIN:
+        return await switch_async_attach_trigger(hass, config, action, trigger_info)
     if config[CONF_DOMAIN] == BINARY_SENSOR_DOMAIN:
         return await binary_sensor_async_attach_trigger(hass, config, action, trigger_info)
 

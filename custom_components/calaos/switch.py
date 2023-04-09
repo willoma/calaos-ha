@@ -1,6 +1,6 @@
 import logging
 
-from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
+from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -8,9 +8,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .entity import CalaosEntity
-from .switch import is_a_switch
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def is_a_switch(item):
+    return is_a_regular_switch(item) or is_an_outlet(item)
+
+
+def is_a_regular_switch(item):
+    return item.name.startswith("SW ")
+
+
+def is_an_outlet(item):
+    return item.name.startswith("OU ")
 
 
 async def async_setup_entry(
@@ -21,23 +32,23 @@ async def async_setup_entry(
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     entities = []
     for item in coordinator.items_by_gui_type("light"):
-        if not is_a_switch(item):
+        if is_a_regular_switch(item):
             _LOGGER.debug("Creating entity for %s", item.name)
-            entity = Light(hass, config_entry.entry_id, item)
+            entity = Switch(hass, config_entry.entry_id, item)
             coordinator.register(item.id, entity)
             entities.append(entity)
-    for item in coordinator.items_by_gui_type("light_dimmer"):
-        _LOGGER.debug("Creating entity for %s", item.name)
-        entity = LightDimmer(hass, config_entry.entry_id, item)
-        coordinator.register(item.id, entity)
-        entities.append(entity)
+        elif is_an_outlet(item):
+            _LOGGER.debug("Creating entity for %s", item.name)
+            entity = Outlet(hass, config_entry.entry_id, item)
+            coordinator.register(item.id, entity)
+            entities.append(entity)
     async_add_entities(entities)
 
 
-class Light(CalaosEntity, LightEntity):
-    platform = Platform.LIGHT
-    _attr_color_mode = ColorMode.ONOFF
-    _attr_supported_color_modes = [ColorMode.ONOFF]
+class Switch(CalaosEntity, SwitchEntity):
+    platform = Platform.SWITCH
+
+    _remove_prefix = "SW "
 
     @property
     def is_on(self) -> bool:
@@ -50,25 +61,18 @@ class Light(CalaosEntity, LightEntity):
         self.item.turn_off()
 
 
-class LightDimmer(CalaosEntity, LightEntity):
-    platform = Platform.LIGHT
-    _attr_color_mode = ColorMode.BRIGHTNESS
-    _attr_supported_color_modes = [ColorMode.BRIGHTNESS]
+class Outlet(CalaosEntity, SwitchEntity):
+    platform = Platform.SWITCH
+    _attr_device_class: SwitchDeviceClass.OUTLET
 
-    @property
-    def brightness(self) -> int:
-        return round(self.item.state / 100 * 255)
+    _remove_prefix = "OU "
 
     @property
     def is_on(self) -> bool:
-        return self.item.state > 0
+        return self.item.state
 
     def turn_on(self, **kwargs) -> None:
-        if ATTR_BRIGHTNESS in kwargs:
-            brightness = kwargs[ATTR_BRIGHTNESS]
-            self.item.set_brightness(max(1, round(brightness * 100 / 255)))
-        else:
-            self.item.turn_on()
+        self.item.turn_on()
 
     def turn_off(self, **kwargs) -> None:
         self.item.turn_off()

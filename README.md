@@ -23,9 +23,24 @@ The following devices/items from Calaos are supported:
 | Button                | switch          | (trigger only)     |
 | Triple-click button   | switch3         | (trigger only)     |
 | Long-click button     | switch_long     | (trigger only)     |
-| Relay (on/off lights) | light           | light              |
+| Relay (on/off lights) | light           | light or switch    |
 | DALI light            | light_dimmer    | light              |
 | Scenario              | scenario        | binary_sensor      |
 | Time range            | time_range      | binary_sensor      |
 
 Calaos rooms are suggested as Home Assistant areas.
+
+## Make lights be switches
+
+At least in the Calaos version I am using right now, there is no way to define
+outputs other than lights.
+
+As a trick to make Calaos lights become switches in Home Assistant, use the
+following prefixes in their name:
+
+- `SW` for regular switches
+- `OU` for outlets
+
+That way, outputs with Calaos `light` gui_type will be seen as switches. The
+prefix is removed in the items names. Therefore, a Calaos light item with name
+"SW Door" will be seen as a switch named "Door".

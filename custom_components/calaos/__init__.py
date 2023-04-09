@@ -12,7 +12,8 @@ from .coordinator import CalaosCoordinator
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
-    Platform.LIGHT
+    Platform.LIGHT,
+    Platform.SWITCH,
 ]
 
 
