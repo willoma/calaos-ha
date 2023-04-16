@@ -40,9 +40,9 @@ class CalaosCoordinator:
         )
 
     @callback
-    def stop(self, *args) -> None:
+    def stop_poller(self, *args) -> None:
         _LOGGER.debug(
-            "Disconnecting and stopping the pushing poller for %s",
+            "Disconnecting and stopping the poller for %s",
             self.calaos_url
         )
         if self.stopper:
@@ -77,14 +77,26 @@ class CalaosCoordinator:
         return self.client.items_by_gui_type(gui_type)
 
     async def poll(self, *args) -> None:
+        if not self.client:
+            try:
+                await self.connect()
+            except (RemoteDisconnected, URLError) as ex:
+                _LOGGER.error(f"connection error before polling: {ex}")
+                self.client = None
+                return
+            except Exception as ex:
+                _LOGGER.error(f"unknown error before polling: {ex}")
+                self.client = None
+                return
         try:
             events = await self.hass.async_add_executor_job(self.client.poll)
         except (RemoteDisconnected, URLError) as ex:
-            _LOGGER.error(f"connection error whole polling: {ex}")
-            await self.connect()
+            _LOGGER.error(f"connection error while polling: {ex}")
+            self.client = None
             return
         except Exception as ex:
             _LOGGER.error(f"unknown error while polling: {ex}")
+            self.client = None
             return
         if len(events) > 0:
             _LOGGER.debug(f"Calaos events: {events}")
@@ -119,7 +131,7 @@ class CalaosCoordinator:
                         )
 
     async def start_poller(self) -> None:
-        _LOGGER.debug("Starting the pushing poller for %s", self.calaos_url)
+        _LOGGER.debug("Starting the poller for %s", self.calaos_url)
         self.stopper = async_track_time_interval(
             self.hass,
             self.poll,
