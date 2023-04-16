@@ -29,8 +29,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.declare_noentity_devices()
 
-    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop)
-    entry.async_on_unload(coordinator.stop)
+    hass.bus.async_listen_once(
+        EVENT_HOMEASSISTANT_STOP,
+        coordinator.stop_poller
+    )
+    entry.async_on_unload(coordinator.stop_poller)
 
     entry.async_create_task(
         hass,
