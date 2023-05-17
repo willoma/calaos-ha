@@ -19,12 +19,13 @@ A device is created for each Calaos supported item, as well as an entity when ap
 The following devices/items from Calaos are supported:
 
 | Device / item         | Calaos gui_type | HA entity platform |
-|-----------------------|-----------------|--------------------|
+| --------------------- | --------------- | ------------------ |
 | Button                | switch          | (trigger only)     |
 | Triple-click button   | switch3         | (trigger only)     |
 | Long-click button     | switch_long     | (trigger only)     |
 | Relay (on/off lights) | light           | light or switch    |
 | DALI light            | light_dimmer    | light              |
+| Internal boolean      | var_bool        | switch             |
 | Scenario              | scenario        | binary_sensor      |
 | Time range            | time_range      | binary_sensor      |
 

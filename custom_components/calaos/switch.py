@@ -42,7 +42,24 @@ async def async_setup_entry(
             entity = Outlet(hass, config_entry.entry_id, item)
             coordinator.register(item.id, entity)
             entities.append(entity)
+    for item in coordinator.items_by_gui_type("var_bool"):
+        _LOGGER.debug("Creating entity for %s", item.name)
+        entity = VarBool(hass, config_entry.entry_id, item)
+        coordinator.register(item.id, entity)
+        entities.append(entity)
     async_add_entities(entities)
+
+
+class VarBool(CalaosEntity, SwitchEntity):
+    @property
+    def is_on(self) -> bool:
+        return self.item.state
+
+    def turn_on(self, **kwargs) -> None:
+        self.item.turn_on()
+
+    def turn_off(self, **kwargs) -> None:
+        self.item.turn_off()
 
 
 class Switch(CalaosEntity, SwitchEntity):
