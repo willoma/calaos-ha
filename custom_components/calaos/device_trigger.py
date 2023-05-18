@@ -3,19 +3,19 @@ import voluptuous as vol
 from homeassistant.components.binary_sensor import DOMAIN as BINARY_SENSOR_DOMAIN
 from homeassistant.components.binary_sensor.device_trigger import (
     async_get_triggers as binary_sensor_async_get_triggers,
-    async_attach_trigger as binary_sensor_async_attach_trigger
+    async_attach_trigger as binary_sensor_async_attach_trigger,
 )
 from homeassistant.components.device_automation import DEVICE_TRIGGER_BASE_SCHEMA
 from homeassistant.components.homeassistant.triggers import event as event_trigger
 from homeassistant.components.light import DOMAIN as LIGHT_DOMAIN
 from homeassistant.components.light.device_trigger import (
     async_get_triggers as light_async_get_triggers,
-    async_attach_trigger as light_async_attach_trigger
+    async_attach_trigger as light_async_attach_trigger,
 )
 from homeassistant.components.switch import DOMAIN as SWITCH_DOMAIN
 from homeassistant.components.switch.device_trigger import (
     async_get_triggers as switch_async_get_triggers,
-    async_attach_trigger as switch_async_attach_trigger
+    async_attach_trigger as switch_async_attach_trigger,
 )
 from homeassistant.const import CONF_DEVICE_ID, CONF_DOMAIN, CONF_PLATFORM, CONF_TYPE
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
@@ -28,8 +28,11 @@ from .switch import is_a_switch
 
 TRIGGER_TYPES = {
     "click",
-    "single_click", "double_click", "triple_click",
-    "short_click", "long_click"
+    "single_click",
+    "double_click",
+    "triple_click",
+    "short_click",
+    "long_click",
 }
 
 TRIGGER_SCHEMA = DEVICE_TRIGGER_BASE_SCHEMA.extend(
@@ -109,7 +112,7 @@ def switch3_triggers(device_id: str) -> list[dict[str, str]]:
             CONF_DOMAIN: DOMAIN,
             CONF_DEVICE_ID: device_id,
             CONF_TYPE: "triple_click",
-        }
+        },
     ]
 
 
@@ -127,7 +130,7 @@ def switch_long_triggers(device_id: str) -> list[dict[str, str]]:
             CONF_DOMAIN: DOMAIN,
             CONF_DEVICE_ID: device_id,
             CONF_TYPE: "long_click",
-        }
+        },
     ]
 
 
@@ -142,16 +145,20 @@ async def async_attach_trigger(
     if config[CONF_DOMAIN] == SWITCH_DOMAIN:
         return await switch_async_attach_trigger(hass, config, action, trigger_info)
     if config[CONF_DOMAIN] == BINARY_SENSOR_DOMAIN:
-        return await binary_sensor_async_attach_trigger(hass, config, action, trigger_info)
+        return await binary_sensor_async_attach_trigger(
+            hass, config, action, trigger_info
+        )
 
-    event_config = event_trigger.TRIGGER_SCHEMA({
-        event_trigger.CONF_PLATFORM: "event",
-        event_trigger.CONF_EVENT_TYPE: EVENT_DOMAIN,
-        event_trigger.CONF_EVENT_DATA: {
-            CONF_DEVICE_ID: config[CONF_DEVICE_ID],
-            CONF_TYPE: config[CONF_TYPE],
-        },
-    })
+    event_config = event_trigger.TRIGGER_SCHEMA(
+        {
+            event_trigger.CONF_PLATFORM: "event",
+            event_trigger.CONF_EVENT_TYPE: EVENT_DOMAIN,
+            event_trigger.CONF_EVENT_DATA: {
+                CONF_DEVICE_ID: config[CONF_DEVICE_ID],
+                CONF_TYPE: config[CONF_TYPE],
+            },
+        }
+    )
     return await event_trigger.async_attach_trigger(
         hass, event_config, action, trigger_info, platform_type="device"
     )

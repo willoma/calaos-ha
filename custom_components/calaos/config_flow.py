@@ -24,9 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 def conf_schema(discovered_ip):
     return vol.Schema(
         {
-            vol.Required(CONF_URL, default="https://"+discovered_ip): str,
+            vol.Required(CONF_URL, default="https://" + discovered_ip): str,
             vol.Required(CONF_USERNAME): str,
-            vol.Required(CONF_PASSWORD): str
+            vol.Required(CONF_PASSWORD): str,
         }
     )
 
@@ -34,23 +34,17 @@ def conf_schema(discovered_ip):
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    async def async_step_user(
-        self, info: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, info: dict[str, Any] | None = None) -> FlowResult:
         if info is None:
             discovered_ip = await self.hass.async_add_executor_job(discover, 1)
             return self.async_show_form(
-                step_id="user",
-                data_schema=conf_schema(discovered_ip)
+                step_id="user", data_schema=conf_schema(discovered_ip)
             )
 
         errors = {}
         try:
             await self.hass.async_add_executor_job(
-                Client,
-                info["url"],
-                info["username"],
-                info["password"]
+                Client, info["url"], info["username"], info["password"]
             )
         except HTTPError:
             errors["base"] = "invalid_auth"
@@ -62,7 +56,5 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         discovered_ip = await self.hass.async_add_executor_job(discover, 1)
         return self.async_show_form(
-            step_id="user",
-            data_schema=conf_schema(discovered_ip),
-            errors=errors
+            step_id="user", data_schema=conf_schema(discovered_ip), errors=errors
         )

@@ -32,5 +32,5 @@ class CalaosEntity:
             manufacturer="Calaos",
             model="Calaos v3",
             suggested_area=self.item.room.name,
-            via_device=(DOMAIN, self.entry_id)
+            via_device=(DOMAIN, self.entry_id),
         )

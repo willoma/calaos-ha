@@ -29,22 +29,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await coordinator.declare_noentity_devices()
 
-    hass.bus.async_listen_once(
-        EVENT_HOMEASSISTANT_STOP,
-        coordinator.stop_poller
-    )
+    hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, coordinator.stop_poller)
     entry.async_on_unload(coordinator.stop_poller)
 
     entry.async_create_task(
-        hass,
-        hass.config_entries.async_forward_entry_setups(
-            entry, PLATFORMS
-        )
+        hass, hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     )
     entry.async_create_background_task(
-        hass,
-        coordinator.start_poller(),
-        "Calaos poller"
+        hass, coordinator.start_poller(), "Calaos poller"
     )
     return True
 

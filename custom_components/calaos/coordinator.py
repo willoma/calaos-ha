@@ -33,18 +33,12 @@ class CalaosCoordinator:
     async def connect(self) -> None:
         _LOGGER.debug("Connecting to %s", self.calaos_url)
         self.client = await self.hass.async_add_executor_job(
-            Client,
-            self.calaos_url,
-            self.calaos_username,
-            self.calaos_password
+            Client, self.calaos_url, self.calaos_username, self.calaos_password
         )
 
     @callback
     def stop_poller(self, *args) -> None:
-        _LOGGER.debug(
-            "Disconnecting and stopping the poller for %s",
-            self.calaos_url
-        )
+        _LOGGER.debug("Disconnecting and stopping the poller for %s", self.calaos_url)
         if self.stopper:
             self.stopper()
         self.stopper = None
@@ -126,23 +120,16 @@ class CalaosCoordinator:
                             EVENT_DOMAIN,
                             {
                                 CONF_DEVICE_ID: self._device_id_by_id[evt.item.id],
-                                CONF_TYPE: event_type
-                            }
+                                CONF_TYPE: event_type,
+                            },
                         )
 
     async def start_poller(self) -> None:
         _LOGGER.debug("Starting the poller for %s", self.calaos_url)
-        self.stopper = async_track_time_interval(
-            self.hass,
-            self.poll,
-            POLL_INTERVAL
-        )
+        self.stopper = async_track_time_interval(self.hass, self.poll, POLL_INTERVAL)
 
     async def declare_device(
-        self,
-        registry: device_registry.DeviceRegistry,
-        entry_id: str,
-        item: Item
+        self, registry: device_registry.DeviceRegistry, entry_id: str, item: Item
     ) -> None:
         _LOGGER.debug("Declaring device without entity for %s", item.name)
         device = registry.async_get_or_create(
