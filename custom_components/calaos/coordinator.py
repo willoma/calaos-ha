@@ -8,11 +8,15 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry
 from homeassistant.helpers.event import async_track_time_interval
 
-from pycalaos import Client, ClickType, NbClicks
-from pycalaos.item import Item
+from pycalaos import Client
+from pycalaos.item.common import Item
 
 from .const import DOMAIN, EVENT_DOMAIN, POLL_INTERVAL
 from .entity import CalaosEntity
+from .no_entity import (
+    translate_trigger as noentity_translate_trigger,
+    triggers as noentity_triggers,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,12 +57,25 @@ class CalaosCoordinator:
             manufacturer="Calaos",
             model="Calaos v3",
         )
-        for item in self.client.items_by_gui_type("switch"):
-            await self.declare_device(dev_registry, self.entry_id, item)
-        for item in self.client.items_by_gui_type("switch3"):
-            await self.declare_device(dev_registry, self.entry_id, item)
-        for item in self.client.items_by_gui_type("switch_long"):
-            await self.declare_device(dev_registry, self.entry_id, item)
+
+        for itemType in noentity_triggers.keys():
+            for item in self.client.items_by_type(itemType):
+                await self.declare_device(dev_registry, self.entry_id, item)
+
+    async def declare_device(
+        self, registry: device_registry.DeviceRegistry, entry_id: str, item: Item
+    ) -> None:
+        _LOGGER.debug("Declaring device without entity for %s", item.name)
+        device = registry.async_get_or_create(
+            config_entry_id=entry_id,
+            identifiers={(DOMAIN, entry_id, item.id)},
+            name=item.name,
+            manufacturer="Calaos",
+            model="Calaos v3",
+            suggested_area=item.room.name,
+            via_device=(DOMAIN, entry_id),
+        )
+        self._device_id_by_id[item.id] = device.id
 
     @callback
     def register(self, item_id: str, entity: CalaosEntity) -> None:
@@ -95,26 +112,19 @@ class CalaosCoordinator:
         if len(events) > 0:
             _LOGGER.debug(f"Calaos events: {events}")
             for evt in events:
+                # If the item has an entity, simply schedule its update
                 if evt.item.id in self._entity_by_id:
+                    _LOGGER.debug(f"Event for known entity: {evt}")
                     entity = self._entity_by_id[evt.item.id]
                     entity.async_schedule_update_ha_state()
                     continue
-                event_type = None
-                if evt.item.gui_type == "switch" and evt.state == True:
-                    event_type = "click"
-                elif evt.item.gui_type == "switch3" and evt.state != NbClicks.NONE:
-                    if evt.state == NbClicks.SINGLE:
-                        event_type = "single_click"
-                    elif evt.state == NbClicks.DOUBLE:
-                        event_type = "double_click"
-                    elif evt.state == NbClicks.TRIPLE:
-                        event_type = "triple_click"
-                elif evt.item.gui_type == "switch_long" and evt.state != ClickType.NONE:
-                    if evt.state == ClickType.SHORT:
-                        event_type = "short_click"
-                    elif evt.state == ClickType.LONG:
-                        event_type = "long_click"
-                if event_type != None:
+
+                # Fire HA events for noentity items
+                event_type = noentity_translate_trigger(evt)
+                if event_type:
+                    _LOGGER.debug(
+                        f"Event for known no-entity device: {evt} -> {event_type}"
+                    )
                     if evt.item.id in self._device_id_by_id:
                         self.hass.bus.async_fire(
                             EVENT_DOMAIN,
@@ -125,20 +135,5 @@ class CalaosCoordinator:
                         )
 
     async def start_poller(self) -> None:
-        _LOGGER.debug("Starting the poller for %s", self.calaos_url)
+        _LOGGER.debug(f"Starting the poller for {self.calaos_url}")
         self.stopper = async_track_time_interval(self.hass, self.poll, POLL_INTERVAL)
-
-    async def declare_device(
-        self, registry: device_registry.DeviceRegistry, entry_id: str, item: Item
-    ) -> None:
-        _LOGGER.debug("Declaring device without entity for %s", item.name)
-        device = registry.async_get_or_create(
-            config_entry_id=entry_id,
-            identifiers={(DOMAIN, entry_id, item.id)},
-            name=item.name,
-            manufacturer="Calaos",
-            model="Calaos v3",
-            suggested_area=item.room.name,
-            via_device=(DOMAIN, entry_id),
-        )
-        self._device_id_by_id[item.id] = device.id

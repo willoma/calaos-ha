@@ -1,7 +1,5 @@
 """Calaos integration for Home Assistant."""
 
-from typing import Any
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP, Platform
 from homeassistant.core import HomeAssistant
@@ -12,8 +10,12 @@ from .coordinator import CalaosCoordinator
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
+    Platform.COVER,
     Platform.LIGHT,
+    Platform.NUMBER,
+    Platform.SENSOR,
     Platform.SWITCH,
+    Platform.TEXT,
 ]
 
 

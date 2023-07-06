@@ -1,9 +1,13 @@
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+import logging
 
-from pycalaos.item import Item
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo, Entity
+
+from pycalaos.item.common import Item
 
 from .const import DOMAIN
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class CalaosEntity:
@@ -13,12 +17,14 @@ class CalaosEntity:
 
     _remove_prefix = ""
 
-    def __init__(self, hass: HomeAssistant, entry_id: str, item: Item) -> None:
+    def __init__(
+        self, hass: HomeAssistant, entry_id: str, item: Item, platform
+    ) -> None:
         self.entry_id = entry_id
         self.item = item
         self.hass = hass
         self._attr_unique_id = f"{DOMAIN}_{self.item.id}"
-        self.entity_id = f"{self.platform}.{self.unique_id}"
+        self.entity_id = f"{platform}.{self.unique_id}"
 
     async def async_added_to_hass(self) -> None:
         self.async_write_ha_state()
@@ -34,3 +40,20 @@ class CalaosEntity:
             suggested_area=self.item.room.name,
             via_device=(DOMAIN, self.entry_id),
         )
+
+
+def setup_entities(
+    hass: HomeAssistant,
+    entry_id: str,
+    mapping: dict[type, type],
+    platform: str,
+) -> list[Entity]:
+    coordinator = hass.data[DOMAIN][entry_id]
+    entities = []
+    for libType, haEntity in mapping.items():
+        for item in coordinator.client.items_by_type(libType):
+            _LOGGER.debug("Declaring entity for %s", item.name)
+            entity = haEntity(hass, entry_id, item, platform)
+            coordinator.register(item.id, entity)
+            entities.append(entity)
+    return entities

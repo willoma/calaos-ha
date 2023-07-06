@@ -1,6 +1,6 @@
 {
 	"title": "Calaos",
-	"config":{
+	"config": {
 		"step": {
 			"user": {
 				"title": "Connexion à Calaos",
@@ -16,11 +16,12 @@
 	"device_automation": {
 		"trigger_type": {
 			"click": "Clic",
+			"short_click": "Clic court",
+			"long_click": "Clic long",
 			"single_click": "Clic simple",
 			"double_click": "Clic double",
 			"triple_click": "Clic triple",
-			"short_click": "Clic court",
-			"long_click": "Clic long"
+			"triggered": "Déclenché"
 		}
 	}
 }

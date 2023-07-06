@@ -16,18 +16,38 @@ This integration is an independent project: the Calaos team is by no means invov
 
 A device is created for each Calaos supported item, as well as an entity when applicable.
 
+As a general rule:
+
+- items that only send one-shot events have no entity, only device triggers
+  (buttons, switches, etc)
+- items that only have values but cannot be modified are mapped to sensors or
+  binary sensors
+- items that can be modified/triggered are mapped to relevant types
+
 The following devices/items from Calaos are supported:
 
-| Device / item         | Calaos gui_type | HA entity platform |
-| --------------------- | --------------- | ------------------ |
-| Button                | switch          | (trigger only)     |
-| Triple-click button   | switch3         | (trigger only)     |
-| Long-click button     | switch_long     | (trigger only)     |
-| Relay (on/off lights) | light           | light or switch    |
-| DALI light            | light_dimmer    | light              |
-| Internal boolean      | var_bool        | switch             |
-| Scenario              | scenario        | binary_sensor      |
-| Time range            | time_range      | binary_sensor      |
+| Calaos type     | HA platform     |
+| --------------- | --------------- |
+| **Generic**     |
+| InPlageHoraire  | Binary sensor   |
+| InputTime       | (triggers only) |
+| InternalBool    | Switch          |
+| InternalInt     | Number          |
+| InternalString  | Text            |
+| Scenario        | Switch          |
+| **Wago**        |
+| WIDigitalBP     | (triggers only) |
+| WIDigitalLong   | (triggers only) |
+| WIDigitalTriple | (triggers only) |
+| WODali          | Light           |
+| WODigital       | Light or switch |
+| WOVoletSmart    | Cover           |
+| **Web**         |
+| WebInputAnalog  | Sensor          |
+| WebInputString  | Sensor          |
+| WebInputTemp    | Sensor          |
+| **Fallback**    |
+| Any other type  | Sensor          |
 
 Calaos rooms are suggested as Home Assistant areas.
 
@@ -42,6 +62,6 @@ following prefixes in their name:
 - `SW` for regular switches
 - `OU` for outlets
 
-That way, outputs with Calaos `light` gui_type will be seen as switches. The
-prefix is removed in the items names. Therefore, a Calaos light item with name
+That way, Calaos output lights will be seen as switches. The prefix is removed
+in the entity and device name. Therefore, a Calaos light item with name
 "SW Door" will be seen as a switch named "Door".

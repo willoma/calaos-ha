@@ -1,70 +1,47 @@
 import logging
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-from .entity import CalaosEntity
+from .entity import CalaosEntity, setup_entities
+
+from pycalaos.item import io
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def is_a_switch(item):
+def is_a_switch(item: io.OutputLight) -> bool:
     return is_a_regular_switch(item) or is_an_outlet(item)
 
 
-def is_a_regular_switch(item):
+def is_a_regular_switch(item: io.OutputLight) -> bool:
     return item.name.startswith("SW ")
 
 
-def is_an_outlet(item):
+def is_an_outlet(item: io.OutputLight) -> bool:
     return item.name.startswith("OU ")
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    entities = []
-    for item in coordinator.items_by_gui_type("light"):
-        if is_a_regular_switch(item):
-            _LOGGER.debug("Creating entity for %s", item.name)
-            entity = Switch(hass, config_entry.entry_id, item)
-            coordinator.register(item.id, entity)
-            entities.append(entity)
-        elif is_an_outlet(item):
-            _LOGGER.debug("Creating entity for %s", item.name)
-            entity = Outlet(hass, config_entry.entry_id, item)
-            coordinator.register(item.id, entity)
-            entities.append(entity)
-    for item in coordinator.items_by_gui_type("var_bool"):
-        _LOGGER.debug("Creating entity for %s", item.name)
-        entity = VarBool(hass, config_entry.entry_id, item)
-        coordinator.register(item.id, entity)
-        entities.append(entity)
-    async_add_entities(entities)
+class InternalBool(CalaosEntity, SwitchEntity):
+    _attr_icon = "mdi:toggle-switch-outline"
 
-
-class VarBool(CalaosEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
         return self.item.state
 
     def turn_on(self, **kwargs) -> None:
-        self.item.turn_on()
+        self.item.true()
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs) -> None:
-        self.item.turn_off()
+        self.item.false()
+        self.schedule_update_ha_state()
 
 
-class Switch(CalaosEntity, SwitchEntity):
-    platform = Platform.SWITCH
-
+class OutputLightAsSwitch(CalaosEntity, SwitchEntity):
     _remove_prefix = "SW "
 
     @property
@@ -72,16 +49,16 @@ class Switch(CalaosEntity, SwitchEntity):
         return self.item.state
 
     def turn_on(self, **kwargs) -> None:
-        self.item.turn_on()
+        self.item.true()
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs) -> None:
-        self.item.turn_off()
+        self.item.false()
+        self.schedule_update_ha_state()
 
 
-class Outlet(CalaosEntity, SwitchEntity):
-    platform = Platform.SWITCH
+class OutputLightAsOutlet(CalaosEntity, SwitchEntity):
     _attr_device_class: SwitchDeviceClass.OUTLET
-
     _remove_prefix = "OU "
 
     @property
@@ -89,7 +66,58 @@ class Outlet(CalaosEntity, SwitchEntity):
         return self.item.state
 
     def turn_on(self, **kwargs) -> None:
-        self.item.turn_on()
+        self.item.true()
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs) -> None:
-        self.item.turn_off()
+        self.item.false()
+        self.schedule_update_ha_state()
+
+
+class Scenario(CalaosEntity, SwitchEntity):
+    _attr_icon = "mdi:motion-play-outline"
+
+    @property
+    def is_on(self) -> bool:
+        return self.item.state
+
+    def turn_on(self, **kwargs) -> None:
+        self.item.true()
+        self.schedule_update_ha_state()
+
+    def turn_off(self, **kwargs) -> None:
+        self.item.false()
+        self.schedule_update_ha_state()
+
+
+mapping = {
+    io.InternalBool: InternalBool,
+    io.Scenario: Scenario,
+}
+
+
+def setup_switch_entities(
+    hass: HomeAssistant,
+    entry_id: str,
+) -> list[Entity]:
+    coordinator = hass.data[DOMAIN][entry_id]
+    entities = []
+    for item in coordinator.client.items_by_type(io.OutputLight):
+        if is_a_regular_switch(item):
+            _LOGGER.debug("Creating entity for %s", item.name)
+            entity = OutputLightAsSwitch(hass, entry_id, item, Platform.SWITCH)
+            coordinator.register(item.id, entity)
+            entities.append(entity)
+        elif is_an_outlet(item):
+            _LOGGER.debug("Creating entity for %s", item.name)
+            entity = OutputLightAsOutlet(hass, entry_id, item, Platform.SWITCH)
+            coordinator.register(item.id, entity)
+            entities.append(entity)
+    return entities
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    async_add_entities(setup_switch_entities(hass, config_entry.entry_id))
+    async_add_entities(
+        setup_entities(hass, config_entry.entry_id, mapping, Platform.SWITCH)
+    )

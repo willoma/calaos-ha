@@ -1,6 +1,6 @@
 {
 	"title": "Calaos",
-	"config":{
+	"config": {
 		"step": {
 			"user": {
 				"title": "Calaos connection",
@@ -16,11 +16,12 @@
 	"device_automation": {
 		"trigger_type": {
 			"click": "Click",
+			"short_click": "Short click",
+			"long_click": "Long click",
 			"single_click": "Single click",
 			"double_click": "Double click",
 			"triple_click": "Triple click",
-			"short_click": "Short click",
-			"long_click": "Long click"
+			"triggered": "Triggered"
 		}
 	}
 }

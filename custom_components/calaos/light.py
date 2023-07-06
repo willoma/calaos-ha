@@ -1,41 +1,20 @@
 import logging
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity import Entity
+
+from pycalaos.item import io
 
 from .const import DOMAIN
-from .entity import CalaosEntity
+from .entity import CalaosEntity, setup_entities
 from .switch import is_a_switch
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    entities = []
-    for item in coordinator.items_by_gui_type("light"):
-        if not is_a_switch(item):
-            _LOGGER.debug("Creating entity for %s", item.name)
-            entity = Light(hass, config_entry.entry_id, item)
-            coordinator.register(item.id, entity)
-            entities.append(entity)
-    for item in coordinator.items_by_gui_type("light_dimmer"):
-        _LOGGER.debug("Creating entity for %s", item.name)
-        entity = LightDimmer(hass, config_entry.entry_id, item)
-        coordinator.register(item.id, entity)
-        entities.append(entity)
-    async_add_entities(entities)
-
-
-class Light(CalaosEntity, LightEntity):
-    platform = Platform.LIGHT
+class OutputLight(CalaosEntity, LightEntity):
     _attr_color_mode = ColorMode.ONOFF
     _attr_supported_color_modes = [ColorMode.ONOFF]
 
@@ -44,14 +23,15 @@ class Light(CalaosEntity, LightEntity):
         return self.item.state
 
     def turn_on(self, **kwargs) -> None:
-        self.item.turn_on()
+        self.item.true()
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs) -> None:
-        self.item.turn_off()
+        self.item.false()
+        self.schedule_update_ha_state()
 
 
-class LightDimmer(CalaosEntity, LightEntity):
-    platform = Platform.LIGHT
+class OutputLightDimmer(CalaosEntity, LightEntity):
     _attr_color_mode = ColorMode.BRIGHTNESS
     _attr_supported_color_modes = [ColorMode.BRIGHTNESS]
 
@@ -66,9 +46,38 @@ class LightDimmer(CalaosEntity, LightEntity):
     def turn_on(self, **kwargs) -> None:
         if ATTR_BRIGHTNESS in kwargs:
             brightness = kwargs[ATTR_BRIGHTNESS]
-            self.item.set_brightness(max(1, round(brightness * 100 / 255)))
+            self.item.set(max(1, round(brightness * 100 / 255)))
         else:
-            self.item.turn_on()
+            self.item.true()
+        self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs) -> None:
-        self.item.turn_off()
+        self.item.false()
+        self.schedule_update_ha_state()
+
+
+mapping = {
+    io.OutputLightDimmer: OutputLightDimmer,
+}
+
+
+def setup_light_entities(
+    hass: HomeAssistant,
+    entry_id: str,
+) -> list[Entity]:
+    coordinator = hass.data[DOMAIN][entry_id]
+    entities = []
+    for item in coordinator.client.items_by_type(io.OutputLight):
+        if not is_a_switch(item):
+            _LOGGER.debug("Creating entity for %s", item.name)
+            entity = OutputLight(hass, entry_id, item, Platform.LIGHT)
+            coordinator.register(item.id, entity)
+            entities.append(entity)
+    return entities
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    async_add_entities(setup_light_entities(hass, config_entry.entry_id))
+    async_add_entities(
+        setup_entities(hass, config_entry.entry_id, mapping, Platform.LIGHT)
+    )
