@@ -2,17 +2,16 @@
 	"domain": "calaos",
 	"name": "Calaos",
 	"codeowners": [
-		"@tiramiseb",
 		"@willoma"
 	],
 	"config_flow": true,
 	"dependencies": [],
-	"documentation": "https://github.com/tiramiseb/calaos-ha",
+	"documentation": "https://github.com/willoma/calaos-ha",
 	"integration_type": "device",
 	"iot_class": "local_polling",
-	"issue_tracker": "https://github.com/tiramiseb/calaos-ha/issues",
+	"issue_tracker": "https://github.com/willoma/calaos-ha/issues",
 	"requirements": [
-		"pycalaos==0.0.22"
+		"pycalaos==0.0.23"
 	],
-	"version": "0.1.5"
+	"version": "0.2.1"
 }
