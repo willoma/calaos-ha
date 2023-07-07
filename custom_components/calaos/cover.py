@@ -22,19 +22,19 @@ class OutputShutterSmart(CalaosEntity, CoverEntity):
 
     @property
     def current_cover_position(self) -> int:
-        return self.item.value["position"]
+        return self.item.state["position"]
 
     @property
     def is_opening(self) -> bool:
-        return self.item.value["action"] == io.OutputShutterAction.UP
+        return self.item.state["action"] == io.OutputShutterAction.UP
 
     @property
     def is_closing(self) -> bool:
-        return self.item.value.split()[0] == io.OutputShutterAction.DOWN
+        return self.item.state["action"] == io.OutputShutterAction.DOWN
 
     @property
     def is_closed(self) -> bool:
-        return self.item.value["position"] == 0
+        return self.item.state["position"] == 0
 
     def open_cover(self, **kwargs):
         self.item.up()
