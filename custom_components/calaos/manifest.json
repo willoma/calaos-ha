@@ -13,5 +13,5 @@
 	"requirements": [
 		"pycalaos==0.0.25"
 	],
-	"version": "0.2.4"
+	"version": "0.2.5"
 }

@@ -10,6 +10,8 @@ from pycalaos.item import io
 
 from .entity import CalaosEntity, setup_entities
 
+# For Calaos, 0 is "open" and 100 is "closed"
+# For HA, 0 is "closed" and 100 is "open"
 
 class OutputShutterSmart(CalaosEntity, CoverEntity):
     _attr_device_class = CoverDeviceClass.SHUTTER
@@ -22,7 +24,7 @@ class OutputShutterSmart(CalaosEntity, CoverEntity):
 
     @property
     def current_cover_position(self) -> int:
-        return self.item.state["position"]
+        return 100 - self.item.state["position"]
 
     @property
     def is_opening(self) -> bool:
@@ -34,7 +36,7 @@ class OutputShutterSmart(CalaosEntity, CoverEntity):
 
     @property
     def is_closed(self) -> bool:
-        return self.item.state["position"] == 0
+        return self.item.state["position"] == 100
 
     def open_cover(self, **kwargs):
         self.item.up()
@@ -46,7 +48,7 @@ class OutputShutterSmart(CalaosEntity, CoverEntity):
 
     def set_cover_position(self, **kwargs):
         if ATTR_POSITION in kwargs:
-            position = kwargs[ATTR_POSITION]
+            position = 100 - kwargs[ATTR_POSITION]
             self.item.set(position)
         self.schedule_update_ha_state()
 
