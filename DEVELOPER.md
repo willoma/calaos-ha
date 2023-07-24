@@ -45,4 +45,6 @@ logger:
     custom_components.calaos.light: debug
     custom_components.calaos.no_entity: debug
     custom_components.calaos.switch: debug
+    pycalaos: debug
+    pycalaos.item: debug
 ```
