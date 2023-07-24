@@ -16,6 +16,7 @@
 	"device_automation": {
 		"trigger_type": {
 			"click": "Clic",
+			"release": "Relâché",
 			"short_click": "Clic court",
 			"long_click": "Clic long",
 			"single_click": "Clic simple",

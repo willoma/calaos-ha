@@ -11,6 +11,7 @@ _LOGGER = logging.getLogger(__name__)
 triggers = {
     io.InputSwitch: {
         True: "click",
+        False: "release",
     },
     io.InputSwitchLongPress: {
         io.InputSwitchLongPressState.SHORT: "short_click",
