@@ -32,7 +32,6 @@ class CalaosEntity:
     @property
     def device_info(self) -> DeviceInfo:
         return DeviceInfo(
-            config_entry_id=self.entry_id,
             identifiers={(DOMAIN, self.entry_id, self.item.id)},
             name=self.item.name.removeprefix(self._remove_prefix),
             manufacturer="Calaos",
