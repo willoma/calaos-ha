@@ -38,6 +38,7 @@ In `configuration.yaml`:
 logger:
   default: warning
   logs:
+    custom_components.calaos.binary_sensor: debug
     custom_components.calaos.config_flow: debug
     custom_components.calaos.coordinator: debug
     custom_components.calaos.device_trigger: debug
@@ -45,6 +46,7 @@ logger:
     custom_components.calaos.light: debug
     custom_components.calaos.no_entity: debug
     custom_components.calaos.switch: debug
-    pycalaos: debug
+    pycalaos.client: debug
     pycalaos.item: debug
+    pycalaos.item.common: debug
 ```
