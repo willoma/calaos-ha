@@ -56,6 +56,10 @@ class SwitchAsBinarySensor(CalaosEntity, BinarySensorEntity):
             self._remove_prefix = "BIN "
         super(SwitchAsBinarySensor, self).__init__(hass, entry_id, item, platform)
 
+    @property
+    def is_on(self) -> bool:
+        return self.item.state
+
 mapping = {
     io.InPlageHoraire: InPlageHoraire,
     io.InputSwitch: maybeBinarySensor,
