@@ -64,4 +64,20 @@ following prefixes in their name:
 
 That way, Calaos output lights will be seen as switches. The prefix is removed
 in the entity and device name. Therefore, a Calaos light item with name
-"SW Door" will be seen as a switch named "Door".
+"SW Door" would be seen as a switch named "Door".
+
+## Make digital input switches be sensors
+
+In some situations, a Calaos digital input is not a button, but a binary sensor.
+For instance, a movement sensor may be used as a Wago Digital Input.
+
+As a trick to make Calaos inputs become binary sensors in Home Assistant, use
+the following prefixes in their name:
+
+- `BIN` for generic binary sensors
+- `BIN:<class>` for specific binary sensors, where `<class>` is replaced with a
+  class name (see
+  <https://www.home-assistant.io/integrations/binary_sensor/#device-class>)
+
+For instance, a digital input switch named "BIN:motion Hallway movement" would
+be seen as a motion binary sensor with name "Hallway movement".

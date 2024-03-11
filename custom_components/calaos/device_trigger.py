@@ -43,6 +43,7 @@ from .no_entity import (
     get_triggers as noentity_get_triggers,
     triggers as noentity_triggers,
 )
+from .binary_sensor import is_a_binary_sensor
 from .switch import is_a_switch
 
 _LOGGER = logging.getLogger(__name__)
@@ -123,6 +124,10 @@ async def item_triggers(
             return await switch_async_get_triggers(hass, device_id)
         else:
             return await light_async_get_triggers(hass, device_id)
+
+    # Specific for input buttons, which can also be binary sensors
+    if isinstance(item, io.InputSwitch) and is_a_binary_sensor(item):
+        return await binary_sensor_async_get_triggers(hass, device_id)
 
     # No-entity triggers
     for item_type in noentity_triggers.keys():

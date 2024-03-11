@@ -53,6 +53,7 @@ def setup_entities(
         for item in coordinator.client.items_by_type(libType):
             _LOGGER.debug("Declaring entity for %s", item.name)
             entity = haEntity(hass, entry_id, item, platform)
-            coordinator.register(item.id, entity)
-            entities.append(entity)
+            if entity:
+                coordinator.register(item.id, entity)
+                entities.append(entity)
     return entities
