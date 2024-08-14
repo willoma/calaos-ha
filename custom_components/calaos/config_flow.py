@@ -45,17 +45,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, info: dict[str, Any] | None = None) -> FlowResult:
-            if info is None:
-                try:
-                    discovered_ip = await self.hass.async_add_executor_job(discover, 1)
-                    return self.async_show_form(
-                        step_id="user", data_schema=conf_schema(discovered_ip)
-                    )
-                except pycalaos.discovery.NoDiscoveryError:
-                    _LOGGER.info("no calaos server discovered")
-                    return self.async_show_form(
-                        step_id="user", data_schema=conf_schema_no_discovery()
-                    )
+        if info is None:
+            try:
+                discovered_ip = await self.hass.async_add_executor_job(discover, 1)
+                return self.async_show_form(
+                    step_id="user", data_schema=conf_schema(discovered_ip)
+                )
+            except pycalaos.discovery.NoDiscoveryError:
+                _LOGGER.info("no calaos server discovered")
+                return self.async_show_form(
+                    step_id="user", data_schema=conf_schema_no_discovery()
+                )
 
         errors = {}
         try:
